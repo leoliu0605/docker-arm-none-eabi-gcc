@@ -34,8 +34,8 @@ jobs:
         if: success()
         uses: peter-evans/dockerhub-description@v2
         env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          USERNAME: ${{ secrets.DOCKER_USERNAME }}
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          repository: ${{ env.DOCKERHUB_USERNAME }}/arm-none-eabi-gcc
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: ${{ env.USERNAME }}/arm-none-eabi-gcc
