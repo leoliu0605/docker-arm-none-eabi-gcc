@@ -33,7 +33,7 @@ async function main() {
         try {
             amd64URL = gcc.distributionUrl(version, "linux").url;
             console.log(`amd64: ${amd64URL}`);
-            buildArgs += ` --build-arg TOOLCHAIN_URL_AMD64=${amd64URL}`;
+            buildArgs += ` --build-arg TOOLCHAIN_URL_AMD64="${amd64URL}"`;
         } catch (e) {
             // console.log(e);
         }
@@ -42,7 +42,7 @@ async function main() {
             console.log(`arm64: ${arm64URL}`);
             if (arm64URL) {
                 platforms += ",linux/arm64";
-                buildArgs += ` --build-arg TOOLCHAIN_URL_ARM64=${arm64URL}`;
+                buildArgs += ` --build-arg TOOLCHAIN_URL_ARM64="${arm64URL}"`;
             }
         } catch (e) {
             // console.log(e);
