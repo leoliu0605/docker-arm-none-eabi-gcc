@@ -41,35 +41,32 @@ Create a shell script named `docker-build.sh` in the root directory of your proj
 ```bash
 #!/bin/bash
 
-# Set image and container names
-IMAGE_NAME="jafee201153/arm-none-eabi-gcc:latest-ubuntu-20.04"
+# Define Docker image and container names
+IMAGE_NAME="jafee201153/arm-none-eabi-gcc:13.2.Rel1-ubuntu-20.04"
 CONTAINER_NAME="arm-none-eabi-gcc-container"
 
-# Define the SSH key paths
+# Set the paths for the SSH private and public keys
 SSH_PRIVATE_KEY_PATH="$HOME/.ssh/id_rsa"
 SSH_PUBLIC_KEY_PATH="$HOME/.ssh/id_rsa.pub"
 
-# Ensure the SSH private key is secure
+# Set the permissions for the SSH private key to be read/write for the owner only
 chmod 600 "$SSH_PRIVATE_KEY_PATH"
-# Public keys can be less restrictive, but typically should not be world-writable
+# Set the permissions for the SSH public key to be read/write for the owner, and readable for others
 chmod 644 "$SSH_PUBLIC_KEY_PATH"
 
-# Start the ssh-agent and add the private key
+# Initialize the ssh-agent and add the private key to it
 eval "$(ssh-agent -s)"
 ssh-add "$SSH_PRIVATE_KEY_PATH"
 
-# Pull the Docker image if it's not available locally
+# If the Docker image is not already available locally, pull it from the Docker repository
 if [[ "$(docker images -q "$IMAGE_NAME" 2>/dev/null)" == "" ]]; then
     docker pull "$IMAGE_NAME"
 fi
 
-# Change the directory to the parent directory of the current directory
-cd ..
-
-# Run the Docker container with the current directory mounted to /share
+# Start a Docker container with the current directory mounted to /share in the container, and the SSH keys mounted to /tmp
 docker run --name "$CONTAINER_NAME" --rm -v "$(pwd)":/share -v "$SSH_PRIVATE_KEY_PATH:/tmp/id_rsa" -v "$SSH_PUBLIC_KEY_PATH:/tmp/id_rsa.pub" -d -it "$IMAGE_NAME" sh
 
-# Set up SSH within the container for subsequent Git operations
+# Inside the container, set up SSH for future Git operations by copying the keys, setting their permissions, and disabling strict host key checking
 docker exec "$CONTAINER_NAME" sh -c "\
     mkdir -p ~/.ssh && \
     cp /tmp/id_rsa ~/.ssh/id_rsa && \
@@ -79,82 +76,100 @@ docker exec "$CONTAINER_NAME" sh -c "\
     echo 'Host *' > ~/.ssh/config && \
     echo '  StrictHostKeyChecking no' >> ~/.ssh/config"
 
-# Perform Git submodule update and make operations
+# Inside the container, navigate to the /share directory, update Git submodules, copy a configuration file, and execute make commands
 docker exec "$CONTAINER_NAME" sh -c "\
     cd /share && \
     git submodule update --init --recursive && \
     make clean && \
     make"
 
-# Stop the container
+# Stop the Docker container
 docker stop "$CONTAINER_NAME"
 
-# Kill the running ssh-agent
+# Terminate the ssh-agent process
 eval "$(ssh-agent -k)"
 ```
 
-### Batch
+### PowerShell
 
-Create a batch script named `docker-build.bat` in the root directory of your project with the following contents:
+Create a PowerShell script named `docker-build.ps1` in the root directory of your project with the following contents:
 
-```bash
-@echo off
-SETLOCAL EnableDelayedExpansion
+```powershell
+Set-StrictMode -Version Latest
 
-:: Set image and container names
-SET "IMAGE_NAME=jafee201153/arm-none-eabi-gcc:latest-ubuntu-20.04"
-SET "CONTAINER_NAME=arm-none-eabi-gcc-container"
+# Function to run the script as an administrator
+function Invoke-Administrator([String] $FilePath, [String[]] $ArgumentList = '') {
+    # Get the current user's security principle
+    $Current = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    # Define the administrator role
+    $Administrator = [Security.Principal.WindowsBuiltInRole]::Administrator
 
-:: Define the SSH key paths
-SET "SSH_PRIVATE_KEY_PATH=%USERPROFILE%\.ssh\id_rsa"
-SET "SSH_PUBLIC_KEY_PATH=%USERPROFILE%\.ssh\id_rsa.pub"
+    # If the current user is not an administrator, run the script as an administrator
+    if (-not $Current.IsInRole($Administrator)) {
+        $PowerShellPath = (Get-Process -Id $PID).Path
+        $Command = "" + $FilePath + "$ArgumentList" + ""
+        Start-Process $PowerShellPath "-NoProfile -ExecutionPolicy Bypass -File $Command" -Verb RunAs
+        exit
+    }
+    # If the current user is an administrator, bypass the execution policy
+    else {
+        Set-ExecutionPolicy -Scope Process -ExecutionPolicy ByPass
+    }
 
-:: Ensure the SSH private key is secure
-ICACLS "%SSH_PRIVATE_KEY_PATH%" /inheritance:r /grant:r "%USERNAME%:R"
-ICACLS "%SSH_PUBLIC_KEY_PATH%" /inheritance:r /grant:r "%USERNAME%:R"
+    # Set the working directory to the directory of the script
+    $ParentFolder = [System.IO.Path]::GetDirectoryName($FilePath)
+    Set-Location $ParentFolder
+    Write-Host "Current working directory: $($PWD.Path)"
+}
 
-:: Check the status of the ssh-agent service and start if not running
-sc query ssh-agent | find "RUNNING"
-IF ERRORLEVEL 1 (
-    echo The ssh-agent service is not running. Starting it now...
-    :: Require to run as Administrator
-    net session >nul 2>&1
-    IF ERRORLEVEL 1 (
-        echo This script must be run as an Administrator
-        :: Exit if not admin
-        GOTO :EOF
-    )
-    sc config ssh-agent start= demand
-    net start ssh-agent
-)
+# Run the script as an administrator
+Invoke-Administrator $PSCommandPath
 
-:: Start the ssh-agent and add the private key
-CALL ssh-agent
-ssh-add "%SSH_PRIVATE_KEY_PATH%"
+# Define Docker image and container names
+$IMAGE_NAME = "jafee201153/arm-none-eabi-gcc:13.2.Rel1-ubuntu-20.04"
+$CONTAINER_NAME = "arm-none-eabi-gcc-container"
 
-:: Pull the Docker image if it's not available locally
-FOR /F "tokens=*" %%i IN ('docker images -q "%IMAGE_NAME%" 2^>nul') DO SET "IMAGE_EXISTS=%%i"
-IF "%IMAGE_EXISTS%"=="" (
-    docker pull "%IMAGE_NAME%"
-)
+# Set the paths for the SSH private and public keys
+$SSH_PRIVATE_KEY_PATH = "$env:USERPROFILE\.ssh\id_rsa"
+$SSH_PUBLIC_KEY_PATH = "$env:USERPROFILE\.ssh\id_rsa.pub"
 
-:: Change the directory to the parent directory of the current directory
-cd ..
+# Set the permissions for the SSH private and public keys to read-only for the current user
+icacls $SSH_PRIVATE_KEY_PATH /inheritance:r /grant:r "$env:USERNAME:R"
+icacls $SSH_PUBLIC_KEY_PATH /inheritance:r /grant:r "$env:USERNAME:R"
 
-:: Run the Docker container with the current directory mounted to /share
-docker run --name "%CONTAINER_NAME%" --rm -v "%CD%":/share -v "%SSH_PRIVATE_KEY_PATH%":/tmp/id_rsa -v "%SSH_PUBLIC_KEY_PATH%":/tmp/id_rsa.pub -d -it "%IMAGE_NAME%" sh
+# If the ssh-agent service is not running, start it
+if ((Get-Service ssh-agent).Status -ne 'Running') {
+    Write-Output "The ssh-agent service is not running. Starting it now..."
+    Set-Service ssh-agent -StartupType Manual
+    Start-Service ssh-agent
+}
 
-:: Set up SSH within the container for subsequent Git operations
-docker exec "%CONTAINER_NAME%" sh -c "mkdir -p ~/.ssh && cp /tmp/id_rsa ~/.ssh/id_rsa && cp /tmp/id_rsa.pub ~/.ssh/id_rsa.pub && chmod 600 ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa.pub && echo 'Host *' > ~/.ssh/config && echo '  StrictHostKeyChecking no' >> ~/.ssh/config"
+# Add the private key to the ssh-agent
+ssh-add $SSH_PRIVATE_KEY_PATH
 
-:: Perform Git submodule update and make operations
-docker exec "%CONTAINER_NAME%" sh -c "cd /share && git submodule update --init --recursive && make clean && make"
+# If the Docker image is not available locally, pull it from the Docker repository
+if (-not (docker images -q $IMAGE_NAME)) {
+    docker pull $IMAGE_NAME
+}
 
-:: Stop the container
-docker stop "%CONTAINER_NAME%"
+# Start a Docker container with the current directory mounted to /share in the container, and the SSH keys mounted to /tmp
+docker run --name $CONTAINER_NAME --rm -v "${PWD}:/share" -v "${SSH_PRIVATE_KEY_PATH}:/tmp/id_rsa" -v "${SSH_PUBLIC_KEY_PATH}:/tmp/id_rsa.pub" -d -it $IMAGE_NAME sh
 
-:: Kill the running ssh-agent
-CALL ssh-agent -k
+# Inside the container, set up SSH for future Git operations by copying the keys, setting their permissions, and disabling strict host key checking
+docker exec $CONTAINER_NAME sh -c "mkdir -p ~/.ssh && cp /tmp/id_rsa ~/.ssh/id_rsa && cp /tmp/id_rsa.pub ~/.ssh/id_rsa.pub && chmod 600 ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa.pub && echo 'Host *' > ~/.ssh/config && echo '  StrictHostKeyChecking no' >> ~/.ssh/config"
 
-ENDLOCAL
+# Inside the container, navigate to the /share directory, update Git submodules, copy a configuration file, and execute make commands
+docker exec $CONTAINER_NAME sh -c "cd /share && git submodule update --init --recursive && make clean && make"
+
+# Stop the Docker container
+docker stop $CONTAINER_NAME
+
+# Terminate the ssh-agent process
+ssh-agent -k
+
+# Reset the permissions of the SSH private key to their inherited permissions
+icacls $SSH_PRIVATE_KEY_PATH /reset
+
+# Reset the permissions of the SSH public key to their inherited permissions
+icacls $SSH_PUBLIC_KEY_PATH /reset
 ```
