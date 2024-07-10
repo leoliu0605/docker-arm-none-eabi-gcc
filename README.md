@@ -11,7 +11,7 @@ Let's build your project with `arm-none-eabi-gcc` in a docker container.
 - Based on `ubuntu:20.04`
 - `git` and `make` are pre-installed
 - Environment variables
-  - `TZ`: Timezone, default area is `Asia/Taipei`
+  - `TZ`: Timezone, default is `Asia/Taipei`
   - `USER_NAME`: User name
   - `USER_UID`: User ID
   - `USER_GID`: Group ID
@@ -43,7 +43,7 @@ docker run -it --rm \
     -e USER_GID=$USER_GID \
     -v "$(pwd)":/home/$USER_NAME/share \
     -w /home/$USER_NAME/share \
-    jafee201153/arm-none-eabi-gcc /bin/bash
+    jafee201153/arm-none-eabi-gcc:$GCC_VERSION /bin/bash
 ```
 
 ## Example
@@ -62,7 +62,7 @@ docker run -it --rm \
     -e USER_GID=$USER_GID \
     -v "$(pwd)":/home/$USER_NAME/share \
     -w /home/$USER_NAME/share \
-    jafee201153/arm-none-eabi-gcc /bin/bash \
+    jafee201153/arm-none-eabi-gcc:$GCC_VERSION /bin/bash \
     -c "make clean && make all"
 ```
 
