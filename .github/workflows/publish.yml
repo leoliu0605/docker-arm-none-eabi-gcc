@@ -10,9 +10,21 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Update the GCC version to the latest
+        run: |
+          echo "Updating the GCC version to the latest"
+          curl -o src/gcc.ts https://raw.githubusercontent.com/carlosperate/arm-none-eabi-gcc-action/main/src/gcc.ts
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add src/gcc.ts
+          git diff --cached --quiet || git commit -m "Update GCC version to the latest"
+          git push origin main
 
       - name: Login to DockerHub
         uses: docker/login-action@v3
