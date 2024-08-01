@@ -8,6 +8,33 @@ interface UrlData {
 }
 
 const versions: {[gccRelease: string]: {[platform: string]: UrlData}} = {
+  '13.3.Rel1': {
+    win32: {
+      url:
+        'https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-mingw-w64-i686-arm-none-eabi.zip',
+      md5: '39d9882ca0eb475e81170ae826c1435d',
+    },
+    mac_x86_64: {
+      url:
+        'https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-darwin-x86_64-arm-none-eabi.tar.xz',
+      md5: '4bb141e44b831635fde4e8139d470f1f',
+    },
+    mac_arm64: {
+      url:
+        'https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-darwin-arm64-arm-none-eabi.tar.xz',
+      md5: 'f1c18320bb3121fa89dca11399273f4e',
+    },
+    linux_x86_64: {
+      url:
+        'https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-x86_64-arm-none-eabi.tar.xz',
+      md5: '0601a9588bc5b9c99ad2b56133b7f118',
+    },
+    linux_aarch64: {
+      url:
+        'https://developer.arm.com/-/media/Files/downloads/gnu/13.3.rel1/binrel/arm-gnu-toolchain-13.3.rel1-aarch64-arm-none-eabi.tar.xz',
+      md5: '303102d97b877ebbeb36b3158994b218',
+    },
+  },
   '13.2.Rel1': {
     win32: {
       url:
@@ -18,6 +45,11 @@ const versions: {[gccRelease: string]: {[platform: string]: UrlData}} = {
       url:
         'https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-darwin-x86_64-arm-none-eabi.tar.xz',
       md5: '41d49840b0fc676d2ae35aab21a58693',
+    },
+    mac_arm64: {
+      url:
+        'https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-darwin-arm64-arm-none-eabi.tar.xz',
+      md5: '2c43e9d72206c1f81227b0a685df5ea6',
     },
     linux_x86_64: {
       url:
@@ -41,6 +73,11 @@ const versions: {[gccRelease: string]: {[platform: string]: UrlData}} = {
         'https://developer.arm.com/-/media/Files/downloads/gnu/12.3.rel1/binrel/arm-gnu-toolchain-12.3.rel1-darwin-x86_64-arm-none-eabi.tar.xz',
       md5: '13ae2cc016564507c91a4fcffb6e3c54',
     },
+    mac_arm64: {
+      url:
+        'https://developer.arm.com/-/media/Files/downloads/gnu/12.3.rel1/binrel/arm-gnu-toolchain-12.3.rel1-darwin-arm64-arm-none-eabi.tar.xz',
+      md5: '53d034e9423e7f470acc5ed2a066758e',
+    },
     linux_x86_64: {
       url:
         'https://developer.arm.com/-/media/Files/downloads/gnu/12.3.rel1/binrel/arm-gnu-toolchain-12.3.rel1-x86_64-arm-none-eabi.tar.xz',
@@ -62,6 +99,11 @@ const versions: {[gccRelease: string]: {[platform: string]: UrlData}} = {
       url:
         'https://developer.arm.com/-/media/Files/downloads/gnu/12.2.rel1/binrel/arm-gnu-toolchain-12.2.rel1-darwin-x86_64-arm-none-eabi.tar.xz',
       md5: 'b98c6f58a4ccf64c38f92b456eb3b3d1',
+    },
+    mac_arm64: {
+      url:
+        'https://developer.arm.com/-/media/Files/downloads/gnu/12.2.rel1/binrel/arm-gnu-toolchain-12.2.rel1-darwin-arm64-arm-none-eabi.tar.xz',
+      md5: '26329762f802bb53ac73385d85b11646',
     },
     linux_x86_64: {
       url:
@@ -632,12 +674,16 @@ export function latestGccVersion(): string {
   return Object.keys(versions)[0];
 }
 
-export function distributionUrl(version: string, platform: string, arch?: string): UrlData {
+export function distributionUrl(version: string, platform: string, arch: string): UrlData {
   // Convert the node platform value to the versions URL keys
   let osName = '';
   switch (platform) {
     case 'darwin':
-      osName = 'mac_x86_64';
+      if (arch === 'arm64') {
+        osName = 'mac_arm64';
+      } else {
+        osName = 'mac_x86_64';
+      }
       break;
     case 'linux':
       if (arch === 'arm64') {
