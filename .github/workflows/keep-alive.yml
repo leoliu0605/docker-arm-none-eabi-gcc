@@ -1,0 +1,37 @@
+name: Auto Keep Alive
+on:
+  schedule:
+    # Runs every day at 3 AM UTC, adjust as needed
+    # Cron format: minute hour day month weekday
+    # Example: '0 3 * * *' means every day at 03:00 UTC
+    - cron: '0 3 * * *'
+  # Allows manual trigger for this workflow
+  workflow_dispatch:
+
+jobs:
+  empty_commit:
+    runs-on: ubuntu-latest # Run workflow on latest Ubuntu
+    permissions:
+      # Grant write permission to allow commit operation
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4 # Copy repository contents to runner
+        with:
+          fetch-depth: 0 # Fetch full git history
+
+      - name: Configure Git user information
+        # Set committer name and email for commit history visibility
+        run: |
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action Bot"
+
+      - name: Make an empty commit
+        # Use --allow-empty to create a commit with no changes
+        run: 'git commit --allow-empty -m "Auto Keep Alive: empty commit"'
+
+      - name: Push empty commit to main branch
+        # Push the new commit to the repository's default branch
+        # GITHUB_TOKEN is automatically provided for authentication
+        run: git push origin HEAD:main
