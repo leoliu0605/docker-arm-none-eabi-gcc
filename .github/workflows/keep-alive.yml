@@ -30,8 +30,6 @@ jobs:
         run: 'git commit --allow-empty -m "Auto Keep Alive: empty commit"'
 
       - name: Push empty commit to main branch
-        # Push the new commit to the repository's default branch (usually main or master)
-        # ${{ secrets.GITHUB_TOKEN }} is automatically provided for authentication
-        run: git push origin main # Replace 'main' with your primary branch name
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Push the new commit to the repository's default branch
+        # GITHUB_TOKEN is automatically provided for authentication
+        run: git push origin HEAD:${{ github.event.repository.default_branch }}
