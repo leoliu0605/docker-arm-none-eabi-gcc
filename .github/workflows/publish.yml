@@ -20,9 +20,11 @@ jobs:
         run: |
           echo "Updating the GCC version to the latest"
           curl -o src/gcc.ts https://raw.githubusercontent.com/carlosperate/arm-none-eabi-gcc-action/main/src/gcc.ts
+          curl -o src/gcc-versions.ts https://raw.githubusercontent.com/carlosperate/arm-none-eabi-gcc-action/refs/heads/main/src/gcc-versions.ts
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add src/gcc.ts
+          git add src/gcc-versions.ts
           git diff --cached --quiet || git commit -m "Update GCC version to the latest"
           git push origin main
 
