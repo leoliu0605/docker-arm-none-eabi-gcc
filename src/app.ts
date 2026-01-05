@@ -31,14 +31,14 @@ async function main() {
             continue;
         }
         try {
-            amd64URL = await gcc.distributionUrl(version, "linux", "linux_x86_64").url;
+            amd64URL = (await gcc.distributionUrl(version, "linux", "linux_x86_64")).url;
             console.log(`amd64: ${amd64URL}`);
             buildArgs += ` --build-arg TOOLCHAIN_URL_AMD64="${amd64URL}"`;
         } catch (e) {
             // console.log(e);
         }
         try {
-            arm64URL = await gcc.distributionUrl(version, "linux", "arm64").url;
+            arm64URL = (await gcc.distributionUrl(version, "linux", "arm64")).url;
             console.log(`arm64: ${arm64URL}`);
             if (arm64URL) {
                 platforms += ",linux/arm64";
