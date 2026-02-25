@@ -8,7 +8,8 @@ Let's build your project with `arm-none-eabi-gcc` in a docker container.
 
 ## Features
 
-- Based on `ubuntu:20.04`
+- Based on `ubuntu` (supports `20.04`, `22.04`, and `24.04`)
+- `ubuntu:24.04` is used as the base image for the `latest` tag
 - `git` and `make` are pre-installed
 - Environment variables
   - `TZ`: Timezone, default is `Asia/Taipei`
