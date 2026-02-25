@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y tzdata && \
 
 # Install required packages
 RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y sudo wget make cpio xz-utils git && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y sudo wget make cpio xz-utils bzip2 git && \
     (apt-get install -y libncurses5 || apt-get install -y libncurses6 || true) && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
