@@ -1,43 +1,7 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-
 import * as core from '@actions/core';
 import semver from 'semver';
 
 import {GccDownloadInfo, gccVersions} from './gcc-versions.js';
-
-// Some Arm download endpoints reject unfamiliar user agents with a challenge page redirect.
-const userAgent = 'curl/8.5.0 (arm-none-eabi-gcc-action)';
-
-async function followRedirects(originalUrl: string): Promise<string> {
-  const MAX_REDIRECTS = 5;
-  let currentUrl = originalUrl;
-  for (let attempt = 0; attempt < MAX_REDIRECTS; attempt++) {
-    const response = await fetch(currentUrl, {
-      method: 'HEAD',
-      redirect: 'manual',
-      headers: {'User-Agent': userAgent},
-    });
-    const statusCode = response.status;
-    if (statusCode >= 300 && statusCode < 400) {
-      const locationValue = response.headers.get('location');
-      if (!locationValue) {
-        core.debug(`Redirect for ${originalUrl} detected without location header at ${currentUrl}`);
-        break;
-      }
-      const nextUrl = new URL(locationValue, currentUrl).toString();
-      core.info(`Detected redirect (${statusCode}) for GCC download.`);
-      core.info(`\tFollowing ${originalUrl}`);
-      core.info(`\tto        ${nextUrl}`);
-      if (attempt >= MAX_REDIRECTS - 1) {
-        core.warning(`Maximum redirects reached for ${originalUrl}`);
-      }
-      currentUrl = nextUrl;
-      continue;
-    }
-    break;
-  }
-  return currentUrl;
-}
 
 export function availableVersions(): string[] {
   return Object.keys(gccVersions);
@@ -48,7 +12,7 @@ export function latestGccVersion(): string {
   return Object.keys(gccVersions)[0];
 }
 
-export async function distributionUrl(version: string, platform: string, arch: string): Promise<GccDownloadInfo> {
+export function distributionUrl(version: string, platform: string, arch: string): GccDownloadInfo {
   // Convert the node platform value to the versions URL keys
   let osName = '';
   switch (platform) {
@@ -89,19 +53,11 @@ export async function distributionUrl(version: string, platform: string, arch: s
     );
   }
   const distData = gccVersions[version][osName];
-  // Arm download files have been moved between servers in the past, so
-  // we try to resolve any redirects here up-front to avoid issues later
-  let resolvedUrl = distData.url;
-  try {
-    resolvedUrl = await followRedirects(distData.url);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    core.debug(`Redirect resolution failed for ${distData.url}: ${message}`);
-  }
   return {
-    url: resolvedUrl,
-    urlOriginal: distData.url,
+    url: distData.url,
+    mirrorUrls: distData.mirrorUrls,
     md5: distData.md5,
+    sha256: distData.sha256,
   };
 }
 
